@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import io from 'socket.io-client';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
-import { AlertCircle } from 'lucide-react';
-
+import { Input } from '../components/ui/input';
+import { Button } from '../components/ui/button';
+import { Card, CardHeader, CardContent, CardFooter } from '../components/ui/card';
+const AlertCircle = () => <span>⚠️</span>;
 const socket = io(process.env.REACT_APP_SERVER_URL || 'http://localhost:3001');
 
 const RST_Game = () => {
