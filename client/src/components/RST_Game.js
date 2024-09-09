@@ -17,6 +17,7 @@ const RST_Game = () => {
   const [loser, setLoser] = useState(null);
   const [playerName, setPlayerName] = useState('');
   const [word, setWord] = useState('');
+  const [invalidWord, setInvalidWord] = useState(false);
 
   useEffect(() => {
     socket.on('updateGame', (gameState) => {
@@ -31,6 +32,7 @@ const RST_Game = () => {
       if (!gameState.gameStarted) {
         setPlayerName('');
         setWord('');
+        setInvalidWord(false);
       }
     });
 
@@ -54,6 +56,21 @@ const RST_Game = () => {
     if (word.trim() !== '') {
       socket.emit('submitWord', word.trim());
       setWord('');
+      setInvalidWord(false);
+    }
+  };
+
+  const handleWordChange = (e) => {
+    const newWord = e.target.value;
+    setWord(newWord);
+    if (newWord.trim().toLowerCase().startsWith('r') || 
+        newWord.trim().toLowerCase().startsWith('s') || 
+        newWord.trim().toLowerCase().startsWith('t')) {
+      setInvalidWord(true);
+      // Automatically submit the word if it starts with R, S, or T
+      socket.emit('submitWord', newWord.trim());
+    } else {
+      setInvalidWord(false);
     }
   };
 
@@ -94,19 +111,21 @@ const RST_Game = () => {
               <Input
                 type="text"
                 value={word}
-                onChange={(e) => setWord(e.target.value)}
+                onChange={handleWordChange}
                 onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
+                  if (e.key === 'Enter' && !invalidWord) {
                     submitWord();
                   }
                 }}
                 placeholder="Enter a word"
-                disabled={currentPlayer !== playerName}
+                disabled={currentPlayer !== playerName || invalidWord}
+                className={invalidWord ? 'border-red-500' : ''}
               />
-              <Button onClick={submitWord} disabled={currentPlayer !== playerName}>
+              <Button onClick={submitWord} disabled={currentPlayer !== playerName || invalidWord || word.trim() === ''}>
                 Submit
               </Button>
             </div>
+            {invalidWord && <p className="text-red-500">Invalid word! Words starting with R, S, or T are not allowed.</p>}
           </div>
         )}
       </CardContent>
