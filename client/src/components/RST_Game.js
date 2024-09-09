@@ -21,6 +21,7 @@ const RST_Game = () => {
 
   useEffect(() => {
     socket.on('updateGame', (gameState) => {
+      console.log('Received game state:', gameState);
       setPlayers(gameState.players);
       setCurrentPlayer(gameState.currentPlayer);
       setGameStarted(gameState.gameStarted);
@@ -30,7 +31,6 @@ const RST_Game = () => {
       setWinner(gameState.winner);
       setLoser(gameState.loser);
       if (!gameState.gameStarted) {
-        setPlayerName('');
         setWord('');
         setInvalidWord(false);
       }
@@ -48,12 +48,14 @@ const RST_Game = () => {
 
   const joinGame = () => {
     if (playerName.trim() !== '') {
+      console.log('Joining game as:', playerName.trim());
       socket.emit('joinGame', playerName.trim());
     }
   };
 
   const submitWord = () => {
     if (word.trim() !== '') {
+      console.log('Submitting word:', word.trim());
       socket.emit('submitWord', word.trim());
       setWord('');
       setInvalidWord(false);
@@ -67,14 +69,15 @@ const RST_Game = () => {
         newWord.trim().toLowerCase().startsWith('s') || 
         newWord.trim().toLowerCase().startsWith('t')) {
       setInvalidWord(true);
-      // Automatically submit the word if it starts with R, S, or T
       socket.emit('submitWord', newWord.trim());
     } else {
       setInvalidWord(false);
     }
   };
 
-  const isCurrentPlayerTurn = currentPlayer === playerName;
+  const isCurrentPlayerTurn = gameStarted && currentPlayer === playerName;
+
+  console.log('Current state:', { playerName, currentPlayer, isCurrentPlayerTurn, gameStarted });
 
   return (
     <Card className="w-96 mx-auto">
@@ -107,10 +110,10 @@ const RST_Game = () => {
           <div className="space-y-4">
             <p>Players: {players.join(' vs ')}</p>
             <p>Current Player: {currentPlayer}</p>
-            {isCurrentPlayerTurn && (
+            <p>Your Name: {playerName}</p>
+            {isCurrentPlayerTurn ? (
               <p className="text-green-500 font-bold">It's your turn!</p>
-            )}
-            {!isCurrentPlayerTurn && (
+            ) : (
               <p className="text-red-500">Waiting for opponent's move...</p>
             )}
             <p>Previous Word: {currentWord || 'None'}</p>

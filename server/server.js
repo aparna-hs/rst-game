@@ -15,7 +15,7 @@ const io = socketIo(server, {
 
 let gameState = {
   players: [],
-  currentPlayer: '',
+  currentPlayerIndex: 0,
   gameStarted: false,
   currentWord: '',
   timer: 5,
@@ -29,7 +29,7 @@ let timerInterval;
 function resetGameState() {
   gameState = {
     players: [],
-    currentPlayer: '',
+    currentPlayerIndex: 0,
     gameStarted: false,
     currentWord: '',
     timer: 5,
@@ -44,35 +44,47 @@ io.on('connection', (socket) => {
   console.log('New client connected');
 
   socket.on('joinGame', (playerName) => {
+    console.log(`Player ${playerName} is trying to join the game`);
     if (gameState.players.length < 2 && !gameState.players.includes(playerName)) {
       gameState.players.push(playerName);
       socket.playerName = playerName;
+      console.log(`Player ${playerName} joined the game`);
+
       if (gameState.players.length === 2) {
         gameState.gameStarted = true;
-        gameState.currentPlayer = gameState.players[0];
+        gameState.currentPlayerIndex = 0;
         startTimer();
+        console.log('Game started');
       }
-      io.emit('updateGame', gameState);
+
+      io.emit('updateGame', {
+        ...gameState,
+        currentPlayer: gameState.players[gameState.currentPlayerIndex]
+      });
     }
   });
 
   socket.on('submitWord', (word) => {
-    if (gameState.gameStarted && !gameState.gameOver && socket.playerName === gameState.currentPlayer) {
+    console.log(`Player ${socket.playerName} submitted word: ${word}`);
+    if (gameState.gameStarted && !gameState.gameOver && socket.playerName === gameState.players[gameState.currentPlayerIndex]) {
       if (word.toLowerCase().startsWith('r') || 
           word.toLowerCase().startsWith('s') || 
           word.toLowerCase().startsWith('t')) {
         endGame(socket.playerName);
       } else {
         gameState.currentWord = word;
-        gameState.currentPlayer = gameState.players.find(player => player !== gameState.currentPlayer);
+        gameState.currentPlayerIndex = (gameState.currentPlayerIndex + 1) % gameState.players.length;
         resetTimer();
-        io.emit('updateGame', gameState);
+        io.emit('updateGame', {
+          ...gameState,
+          currentPlayer: gameState.players[gameState.currentPlayerIndex]
+        });
       }
     }
   });
 
   socket.on('disconnect', () => {
-    console.log('Client disconnected');
+    console.log(`Client disconnected: ${socket.playerName}`);
     if (socket.playerName && gameState.players.includes(socket.playerName)) {
       if (gameState.gameStarted && !gameState.gameOver) {
         const winner = gameState.players.find(player => player !== socket.playerName);
@@ -82,7 +94,10 @@ io.on('connection', (socket) => {
         if (gameState.players.length === 0) {
           resetGameState();
         }
-        io.emit('updateGame', gameState);
+        io.emit('updateGame', {
+          ...gameState,
+          currentPlayer: gameState.players[gameState.currentPlayerIndex]
+        });
       }
     }
   });
@@ -95,7 +110,7 @@ function startTimer() {
     gameState.timer--;
     io.emit('timerUpdate', gameState.timer);
     if (gameState.timer === 0) {
-      endGame(gameState.currentPlayer);
+      endGame(gameState.players[gameState.currentPlayerIndex]);
     }
   }, 1000);
 }
