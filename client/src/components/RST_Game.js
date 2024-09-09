@@ -74,6 +74,8 @@ const RST_Game = () => {
     }
   };
 
+  const isCurrentPlayerTurn = currentPlayer === playerName;
+
   return (
     <Card className="w-96 mx-auto">
       <CardHeader className="text-2xl font-bold text-center">R,S,T Word Game</CardHeader>
@@ -105,6 +107,12 @@ const RST_Game = () => {
           <div className="space-y-4">
             <p>Players: {players.join(' vs ')}</p>
             <p>Current Player: {currentPlayer}</p>
+            {isCurrentPlayerTurn && (
+              <p className="text-green-500 font-bold">It's your turn!</p>
+            )}
+            {!isCurrentPlayerTurn && (
+              <p className="text-red-500">Waiting for opponent's move...</p>
+            )}
             <p>Previous Word: {currentWord || 'None'}</p>
             <p>Time Left: {timer}s</p>
             <div className="flex space-x-2">
@@ -113,15 +121,18 @@ const RST_Game = () => {
                 value={word}
                 onChange={handleWordChange}
                 onKeyPress={(e) => {
-                  if (e.key === 'Enter' && !invalidWord) {
+                  if (e.key === 'Enter' && !invalidWord && isCurrentPlayerTurn) {
                     submitWord();
                   }
                 }}
                 placeholder="Enter a word"
-                disabled={currentPlayer !== playerName || invalidWord}
+                disabled={!isCurrentPlayerTurn || invalidWord}
                 className={invalidWord ? 'border-red-500' : ''}
               />
-              <Button onClick={submitWord} disabled={currentPlayer !== playerName || invalidWord || word.trim() === ''}>
+              <Button 
+                onClick={submitWord} 
+                disabled={!isCurrentPlayerTurn || invalidWord || word.trim() === ''}
+              >
                 Submit
               </Button>
             </div>
